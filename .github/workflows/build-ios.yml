@@ -1,0 +1,53 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Manuell triggern
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Build iOS app (Debug)
+      run: flutter build ios --debug --no-codesign
+      
+    - name: Build iOS app (Release)
+      run: flutter build ios --release --no-codesign
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-debug
+        path: build/ios/iphoneos/
+        retention-days: 30
+        
+    - name: Upload release build
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-release
+        path: build/ios/Release-iphoneos/
+        retention-days: 30
+
+    - name: Notify on success
+      if: success()
+      run: echo "✅ iOS build successful!"
+
+    - name: Notify on failure
+      if: failure()
+      run: echo "❌ iOS build failed!"
